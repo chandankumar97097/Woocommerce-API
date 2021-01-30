@@ -1,0 +1,22 @@
+<?php 
+/* Template Name: Place Order */
+header('Content-Type: application/json');
+
+if($_GET['order_id']) {
+    $order = new WC_Order($_GET['order_id']);
+    if ($_GET['payment_status'] == 'success') $order->update_status('processing');
+    elseif($_GET['payment_status'] == 'failed') $order->update_status('failed');
+    else $order->update_status('cancelled');
+    $order->set_transaction_id($_GET['transaction_id']);
+    $order->set_date_paid(date('Y-m-d H:i:s'));
+    
+    $error = array();
+    $error['status'] = 'success';
+    echo json_encode($error);
+} else {
+    $error = array();
+    $error['status'] = 'error';
+    $error['message'] = 'Please provide order ID';
+    echo json_encode($error);
+}
+?>
