@@ -1,0 +1,64 @@
+<?php 
+/* Template Name: Cart Api */
+header('Content-Type: application/json');
+session_start();
+if(!isset($_SESSION['customer_secret'])) {
+    $_SESSION['customer_secret']=uniqid();
+} 
+//print_r($_SESSION); 
+//die();
+if($_GET['product_id']) {
+	global $woocommerce;
+	//echo WC()->cart->add_to_cart( $_GET['product_id'] );
+	if(WC()->cart->add_to_cart( $_GET['product_id'] )) {
+	    foreach( WC()->cart->get_cart() as $cart_item ){
+            if($cart_item['product_id']==$_GET['product_id']) {
+                $cart_item['customer_secret']=$_SESSION['customer_secret'];
+                echo wp_send_json($cart_item);
+                break;
+            }
+        }
+	   // $data=array(
+    //         'customer_secret'=>$_SESSION['customer_secret'],
+	   //     'message'=>'Add to Cart Sucessfully',
+	   //     'cart_key'=>WC()->cart->add_to_cart( $_GET['product_id'] ),
+	   //     'quantity' => $_GET['quantity'],
+	   //     'status'=>1
+	   // );
+	} else {
+	    $data=array(
+            'customer_secret'=>$_SESSION['customer_secret'],
+	        'message'=>'Enter a valid Product id',
+	        'status'=>0
+	    );
+	}
+    echo json_encode($data);
+}
+
+if($_GET['cart']=="cart") {
+
+    global $woocommerce;
+    
+    $items = $woocommerce->cart->get_cart();
+        foreach($items as $item => $values) { 
+            $_product =  wc_get_product( $values['data']->get_id()); 
+            $price = get_post_meta($values['product_id'] , '_price', true);
+            $quantity = $values['quantity'];
+            $variation_id = $values['variation_id'];
+            $data_hash = $values['data_hash'];
+            $line_subtotal = $values['line_subtotal'];
+            $line_subtotal_tax = $values['line_subtotal_tax'];
+            $image_id  = $_product->get_image_id();
+            $image_url = wp_get_attachment_image_url( $image_id, 'full' );
+            $data_cart[]=array('product_id'=>$_product->get_id(), 'product_title'=>$_product->get_title(), 'price'=>$price, 'quantity'=>$quantity, 'image'=>$image_url, 'variation_id'=>$variation_id, 'data_hash'=>$data_hash, 'line_subtotal'=>$line_subtotal, 'line_subtotal_tax'=>$line_subtotal_tax);
+        }
+        
+        //echo json_encode($data_cart);
+        
+    $amount = floatval( preg_replace( '#[^\d.]#', '', $woocommerce->cart->get_cart_total() ) );
+    $data_cart[]=array('total_price'=>$amount);
+    
+    echo json_encode($data_cart);
+}
+
+?>
