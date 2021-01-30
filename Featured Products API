@@ -1,0 +1,40 @@
+<?php 
+/* Template name: Featured Products */
+header('Content-Type: application/json');
+    
+    $meta_query   = WC()->query->get_meta_query();
+    $meta_query[] = array(
+        'key'   => '_featured',
+        'value' => 'yes'
+    );
+    $args = array(
+        'post_type'   =>  'product',
+        'stock'       =>  1,
+        'showposts'   =>  6,
+        'orderby'     =>  'date',
+        'order'       =>  'DESC',
+        'meta_query'  =>  $meta_query
+    );
+            
+    $loop = new WP_Query( $args );
+    $product_list = array();
+        if ( $loop->have_posts() ) {
+            while ( $loop->have_posts() ) : $loop->the_post(); global $post;
+            
+                $product = wc_get_product($post);
+                $slug = get_post_field( 'post_name', $post->ID );
+                $image_id  = $product->get_image_id();
+                $image_url = wp_get_attachment_image_url( $image_id, 'full' );
+                $price = $product->get_price();
+                $permalink = get_permalink( $post->ID );
+                
+                $product_details = array('id' => $post->ID, 'name' => get_the_title(), 'slug' => $slug, 'image' => $image_url, 'price' => $price, 'permalink' => $permalink );
+                
+                array_push($product_list, (array)$product_details);
+                
+            endwhile;
+        }
+        wp_reset_postdata();
+        echo json_encode($product_list);
+    
+?>
